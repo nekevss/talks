@@ -1,0 +1,9 @@
+[package]
+name = "rust-talk-2025-12"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+boa_engine = "0.21"
+boa_gc = "0.21"
+url = "2.5.7"

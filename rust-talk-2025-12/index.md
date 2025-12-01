@@ -156,17 +156,30 @@ Implementing a mini JavaScript URL class
 
 <!-- end_slide -->
 
-JavaScript's WHATWG defined URL class
+JavaScript's URL class
 ---
 
 Let's walkthrough putting together a URL class for JavaScript for Boa.
 
+This feature is part of the Web API defined by WHATWG, not the core
+ECMAScript specification.
+
+```js
+// N.B. example sourced from MDN.
+const url = new URL("../cats", "http://www.example.com/dogs");
+console.log(url.hostname); // "www.example.com"
+console.log(url.pathname); // "/cats"
+```
 
 <!-- end_slide -->
 
 <!-- jump_to_middle -->
-First step, struct definition
+Let's begin to implement our URL class
 ===
+
+<!-- alignment: center -->
+Defining the URL struct itself
+
 
 <!-- end_slide -->
 
@@ -180,6 +193,10 @@ URL Class Example
 ```rust +line_numbers
 struct Url(url::Url)
 ```
+
+<!-- column: 1 -->
+
+Let's begin with a basic `Url` struct.
 
 <!-- end_slide -->
 
@@ -195,7 +212,7 @@ use boa_engine::{JsData, Trace, Finalize};
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 ```
 
 <!-- pause -->
@@ -232,7 +249,7 @@ use boa_engine::{JsData, Trace, Finalize};
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
 impl Url {
     fn new() -> Self {
@@ -264,13 +281,14 @@ URL Class Example
 
 ```rust +line_numbers
 use boa_engine::{JsData, Trace, Finalize};
+use boa_engine::boa_class;
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
-#[boa_class(name = "URL")]
-#[boa_(rename_all = "camelCase")]
+#[boa_class(rename = "URL")]
+#[boa(rename_all = "camelCase")]
 impl Url {
     #[boa(constructor)]
     fn new() -> Self {
@@ -292,7 +310,7 @@ We can also declare a specific method as the constructor for that type.
 
 <!-- end_slide -->
 
-But what is the URL class?
+But what actually is the URL class?
 ---
 
 The URL class is defined by WHATWG in IDL as:
@@ -319,13 +337,14 @@ URL Class Example
 
 ```rust +line_numbers
 use boa_engine::{JsData, Trace, Finalize};
+use boa_engine::boa_class;
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
-#[boa_class(name = "URL")]
-#[boa_(rename_all = "camelCase")]
+#[boa_class(rename = "URL")]
+#[boa(rename_all = "camelCase")]
 impl Url {
     #[boa(constructor)]
     fn new(url: String, base: Option<String>) -> Self {
@@ -358,34 +377,33 @@ URL Class Example
 
 ```rust +line_numbers
 use boa_engine::{JsData, Trace, Finalize};
+use boa_engine::boa_class;
 use boa_engine::value::Convert;
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
-#[boa_class(name = "URL")]
-#[boa_(rename_all = "camelCase")]
+#[boa_class(rename = "URL")]
+#[boa(rename_all = "camelCase")]
 impl Url {
     #[boa(constructor)]
-    fn new(Convert(ref url): String, base: Option<Convert<String>>) -> Self {
+    fn new(Convert(ref url): Convert<String>, base: Option<Convert<String>>) -> Self {
         todo!()
     }
 }
 ```
-
-<!-- pause -->
 
 <!-- column: 1 -->
 
 But there's one problem
 ===
 
-<!-- pause -->
-
 JavaScript strings are UTF16; meanwhile, Rust strings are UTF8.
 
 Luckily, this conversion is already covered by Boa.
+
+Now we're ready to move forward.
 
 <!-- end_slide -->
 
@@ -398,17 +416,18 @@ URL Class Example
 
 ```rust +line_numbers
 use boa_engine::{JsString, JsData, Trace, Finalize};
+use boa_engine::boa_class;
 use boa_engine::value::Convert;
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
-#[boa_class(name = "URL")]
-#[boa_(rename_all = "camelCase")]
+#[boa_class(rename = "URL")]
+#[boa(rename_all = "camelCase")]
 impl Url {
     #[boa(constructor)]
-    fn new(Convert(ref url): String, base: Option<Convert<String>>) -> Self {
+    fn new(Convert(ref url): Convert<String>, base: Option<Convert<String>>) -> Self {
         todo!()
     }
 
@@ -419,7 +438,7 @@ impl Url {
 
     #[boa(setter)]
     #[boa(rename = "host")]
-    fn set_host(&mut self, value: Convert<String>) -> JsString {
+    fn set_host(&mut self, value: Convert<String>) {
         let _ = url::quirks::set_host(&mut self.0, &value.0);
     }
 }
@@ -473,19 +492,27 @@ Let's put everything together
 In `url.rs`:
 
 ```rust +line_numbers
-use boa_engine::{JsString, JsData, Trace, Finalize};
+use boa_engine::{Context, realm::Realm, JsResult, JsString, JsData, Trace, Finalize};
+use boa_engine::{boa_class, boa_module, js_error};
 use boa_engine::value::Convert;
 
 #[derive(Debug, Clone, JsData, Trace, Finalize)]
 #[boa_gc(unsafe_no_drop)]
-struct Url(#[unsafe_ignore_trace]url::Url)
+struct Url(#[unsafe_ignore_trace]url::Url);
 
-#[boa_class(name = "URL")]
-#[boa_(rename_all = "camelCase")]
+impl Url {
+    pub fn register(realm: Option<Realm>, context: &mut Context) -> JsResult<()> {
+        js_module::boa_register(realm, context)
+    }
+}
+
+#[boa_class(rename = "URL")]
+#[boa(rename_all = "camelCase")]
 impl Url {
     #[boa(constructor)]
-    fn new(Convert(ref url): String, base: Option<Convert<String>>) -> Self {
-        todo!()
+    fn new(Convert(ref url): Convert<String>, base: Option<Convert<String>>) -> JsResult<Self> {
+        // implementation code
+        unimplemented!()
     }
 
     #[boa(getter)]
@@ -495,7 +522,7 @@ impl Url {
 
     #[boa(setter)]
     #[boa(rename = "host")]
-    fn set_host(&mut self, value: Convert<String>) -> JsString {
+    fn set_host(&mut self, value: Convert<String>) {
         let _ = url::quirks::set_host(&mut self.0, &value.0);
     }
 }
@@ -506,20 +533,30 @@ pub mod js_module {
 }
 ```
 
+<!-- end_slide -->
+
 In `main.rs`:
 
 ```rust +line_numbers
-use boa_engine::Context;
+use boa_engine::{Context, Source};
 
 pub mod url;
 
 fn main() {
     let mut context = Context::default();
-    url::js_module::boa_register(None, &mut context).unwrap()
+    url::Url::register(None, &mut context).expect("successful registration");
     
-    // We now have JavaScript context that can use the `URL` class
+    // We now have JavaScript context that can
+    // use the `URL` class when evaluating JavaScript.
+    context.eval(Source::from_bytes("console.log('Hello world!')".as_bytes()))
 }
 ```
+
+<!-- end_slide -->
+
+<!-- jump_to_middle -->
+Let's run the example!
+===
 
 <!-- end_slide -->
 
