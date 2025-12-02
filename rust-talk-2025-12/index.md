@@ -11,9 +11,11 @@ theme:
 Who am I?
 ---
 
-Software Engineer at Gage.
+My name's Kevin Ness
 
-Open source contributor and maintainer 
+- Software Engineer at Gage.
+
+- Open source maintainer and contributor 
   - Boa, a Rust JavaScript engine
   - temporal_rs, a Rust date/time library
 
@@ -22,12 +24,9 @@ Open source contributor and maintainer
 Exploring JavaScript in Rust
 ---
 
-- What will this talk be?
-- Why are we talking about JavaScript at a Rust meetup?
-- What can we learn from the JavaScript?
-
-- State of ecosystem
-- Dive into Boa
+- Background on ECMAScript (AKA JavaScript) implementations
+- Discuss Rust's footprint on ECMAScript implementations
+- Walkthrough implementing a JavaScript runtime feature in Rust
 
 <!-- end_slide -->
 
@@ -47,8 +46,9 @@ A language specified by tc39's specifications:
 
 General conformance is measured by the `test262` conformance test suite.
 
-There are also runtime features, like `URL`, `console`, `fetch` and
-`setTimeout`, but these are not technically part of the core language.
+There are also runtime features -- like `URL`, `console`, `fetch`, and
+`setTimeout` -- but these are not technically part of the core language
+specification.
 
 <!-- end_slide -->
 
@@ -56,7 +56,7 @@ There are also runtime features, like `URL`, `console`, `fetch` and
 What is a "JavaScript engine"?
 ---
 
-A language interpreter that implements ECMA262, the ECMAScript specification.
+An interpreter that implements the ECMAScript specification, ECMA262.
 
 Major browser / runtime implementations:
 
@@ -67,23 +67,44 @@ Major browser / runtime implementations:
 
 Notably, all of these implementations are all large C++ projects.
 
-* LibJS is not typically included in the "big three", but it is a
-formidable implementation itself that is at the core of LadyBird.
+(*) LibJS is not typically included in the "big three" of V8, SpiderMonkey,
+and JavaScriptCore, but it is a formidable implementation itself that is
+at the core of the new LadyBird.
 
 <!-- end_slide -->
 
-Why not Rust?
+Why C++ and not Rust?
 ---
 
-Can Rust's memory safety guarantees be brought to the world of JavaScript
-engines and web browsers?
+<!-- pause -->
 
-Boa began as one such project to write a new ECMAScript implementation in
-Rust.
+- Most of the major engines are old projects (pre-2006), so Rust was not an option.
+- Secondary tier implementations consisted mostly of Java (Rhino/GraalJS) or C (QuickJS)
+
+<!-- pause -->
+
+Can Rust's memory safety guarantees be brought to the world of ECMAScript?
+===
+
+<!-- pause -->
+
+- Room from greenfield projects to reapproach ECMAScript implementations
+in order to bring.
+
+<!-- pause -->
+
+- Boa began as one such project to write a new ECMAScript implementation in Rust.
 
 <!-- end_slide -->
 
-Rust ecosystem overview
+
+<!-- jump_to_middle -->
+Rust + ECMAScript = ?
+===
+
+<!-- end_slide -->
+
+Rust ECMAScript ecosystem overview
 ---
 
 ECMAScript implementations:
@@ -93,6 +114,8 @@ ECMAScript implementations:
   - Nova
   - YavaShark
 
+<!-- pause -->
+
 ECMAScript related projects:
 
   - temporal_rs, date/time library for ECMAScript's Temporal
@@ -100,20 +123,42 @@ ECMAScript related projects:
   - ryu-js, ECMA compliant fork of ryu
   - ICU4X, Unicode internationalization libraries 
 
+<!-- pause -->
+
+JavaScript tooling:
+
+  - biome (linting/formatting)
+  - oxc (linting/formatting/minifying/etc.)
+  - swc (JS/TS compiler)
+  - rspack (bundler)
+  - rolldown (bundler)
+  - And probably much, much more.
 
 <!-- end_slide -->
 
 General Rust adoption?
 ---
 
-Yes, some! There has been adoption!
+Yes, some! There has been growing adoption of Rust!
+
+<!-- pause -->
 
 - V8 uses `temporal_rs` and ICU4X for it's Temporal implementation
 - SpiderMonkey uses ICU4X for some `Intl` components
 
+<!-- pause -->
+
+`temporal_rs` was the first introduction of Rust into V8.
+
 <!-- end_slide -->
 
+<!-- jump_to_middle -->
 Boa
+===
+
+<!-- end_slide -->
+
+About Boa
 ---
 
 - Started in 2018 by Jason Williams
@@ -191,7 +236,7 @@ URL Class Example
 <!-- column: 0 -->
 
 ```rust +line_numbers
-struct Url(url::Url)
+struct Url(url::Url);
 ```
 
 <!-- column: 1 -->
@@ -313,7 +358,7 @@ We can also declare a specific method as the constructor for that type.
 But what actually is the URL class?
 ---
 
-The URL class is defined by WHATWG in IDL as:
+The URL class is defined by WHATWG in Web IDL as:
 
 ```idl
 interface URL {
@@ -323,7 +368,7 @@ interface URL {
 };
 ```
 
-From this IDL overview, we know that our constructor takes one arg `url` and one
+From this Web IDL overview, we know that our constructor takes one arg `url` and one
 optional arg `base`.
 
 <!-- end_slide -->
@@ -556,7 +601,7 @@ fn main() {
 
 <!-- jump_to_middle -->
 Let's run the example!
-===
+---
 
 <!-- end_slide -->
 
@@ -592,20 +637,44 @@ fn main() {
 
 <!-- end_slide -->
 
+<!-- jump_to_middle -->
 What did we learn?
 ---
 
-We've learned about JavaScript, it's specifications, and the current
-state of the JavaScript interpreter ecosystem.
+<!-- end_slide -->
 
-We've learned how Rust is making an impact in that ecosystem recently
-and the current state of Rust JavaScript projects.
+ECMAScript implementations
+---
 
-We've also briefly walked through how to implement a JavaScript runtime
-feature in Rust using Boa.
+<!-- pause -->
+- the ECMA262 and ECMA402 specifications
+<!-- pause -->
+- briefly overviewed current ECMAScript engines
+
+<!-- pause -->
+
+Rust + ECMAScript
+---
+
+<!-- pause -->
+- the state of Rust in the ECMAScript implementation ecosystem
+<!-- pause -->
+- Boa and its current state
+<!-- pause -->
+- walkthroughed implementing a JavaScript runtime feature in Rust with Boa
 
 <!-- end_slide -->
 
-Thanks! Any questions?
+<!-- jump_to_middle -->
+Interested in learning more or contributing?
+---
+
+<!-- alignment: center -->
+Feel free to reach out!
+
+<!-- end_slide -->
+
+<!-- jump_to_middle -->
+Any questions?
 ---
 
