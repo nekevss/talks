@@ -13,8 +13,6 @@ Who am I?
 
 My name's Kevin Ness
 
-- Software Engineer at Gage.
-
 - Open source maintainer and contributor 
   - Boa, a Rust JavaScript engine
   - temporal_rs, a Rust date/time library
